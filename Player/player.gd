@@ -1,6 +1,7 @@
 class_name Player extends CharacterBody3D
 
-@export_range(1, 35, 1) var speed: float = 10 # m/s
+@export_range(1, 35, 1) var speed: float = 3 # m/s
+@export_range(1, 35, 1) var sprint_speed: float = 5 # m/s
 @export_range(10, 400, 1) var acceleration: float = 100 # m/s^2
 
 @export_range(0.1, 3.0, 0.1) var jump_height: float = 1 # m
@@ -8,6 +9,10 @@ class_name Player extends CharacterBody3D
 
 var jumping: bool = false
 var mouse_captured: bool = false
+# TODO
+var sprinting: bool = false
+var crouching: bool = false
+var aiming: bool = false
 
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 
@@ -31,6 +36,10 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	if Input.is_action_just_pressed(&"jump"): jumping = true
+	if Input.is_action_pressed(&"sprint"):
+		sprinting = true
+	else:
+		sprinting = false
 	if mouse_captured: _handle_joypad_camera_rotation(delta)
 	velocity = _walk(delta) + _gravity(delta) + _jump(delta)
 	move_and_slide()
@@ -58,7 +67,8 @@ func _walk(delta: float) -> Vector3:
 	move_dir = Input.get_vector(&"move_left", &"move_right", &"move_forward", &"move_backwards")
 	var _forward: Vector3 = camera.global_transform.basis * Vector3(move_dir.x, 0, move_dir.y)
 	var walk_dir: Vector3 = Vector3(_forward.x, 0, _forward.z).normalized()
-	walk_vel = walk_vel.move_toward(walk_dir * speed * move_dir.length(), acceleration * delta)
+	var _speed: float = sprint_speed if sprinting else speed
+	walk_vel = walk_vel.move_toward(walk_dir * _speed * move_dir.length(), acceleration * delta)
 	return walk_vel
 
 func _gravity(delta: float) -> Vector3:
